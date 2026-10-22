@@ -27,23 +27,8 @@ def threshold_binary(img, s_thresh=170, sx_thresh=120, l_thresh=200):
     return cv2.bitwise_or(sx_binary, cv2.bitwise_or(s_binary, l_binary))
 
 
-h, w = dist.shape[:2]
-
-src = np.float32([[603, 460], [701, 460], [1045, 690], [287, 690]])
-
-dst = np.float32([[320, 0], [960, 0], [960, 720], [320, 720]])
-
-M = cv2.getPerspectiveTransform(src, dst)
-Minv = cv2.getPerspectiveTransform(dst, src)
-
-warped = cv2.warpPerspective(dist, M, (w, h), flags=cv2.INTER_LINEAR)
-
-def warp(img):
-    h, w = img.shape[:2]
-    return cv2.warpPerspective(img, M, (w, h), flags=cv2.INTER_LINEAR)
-
 if __name__ == "__main__":
-    img = cv2.imread('test_images/straight_lines2.jpg')
+    img = cv2.imread('test_images/test2.jpg')
     undist = undistort(img)
     h, w = undist.shape[:2]
 
@@ -87,10 +72,8 @@ if __name__ == "__main__":
         cv2.rectangle(out_img, (xl_low, y_low), (xl_high, y_high), (0, 255, 0), 2)
         cv2.rectangle(out_img, (xr_low, y_low), (xr_high, y_high), (0, 255, 0), 2)
 
-        good_left = ((nonzeroy >= y_low) & (nonzeroy < y_high) &
-                    (nonzerox >= xl_low) & (nonzerox < xl_high)).nonzero()[0]
-        good_right = ((nonzeroy >= y_low) & (nonzeroy < y_high) &
-                    (nonzerox >= xr_low) & (nonzerox < xr_high)).nonzero()[0]
+        good_left = ((nonzeroy >= y_low) & (nonzeroy < y_high) & (nonzerox >= xl_low) & (nonzerox < xl_high)).nonzero()[0]
+        good_right = ((nonzeroy >= y_low) & (nonzeroy < y_high) & (nonzerox >= xr_low) & (nonzerox < xr_high)).nonzero()[0]
 
         left_inds.append(good_left)
         right_inds.append(good_right)
@@ -119,7 +102,41 @@ if __name__ == "__main__":
         pts = np.int32(np.column_stack((fitx, ploty)))
         cv2.polylines(out_img, [pts], False, (0, 255, 255), 3)
 
-    cv2.imwrite('docs/sliding_windows.png', out_img)
-    cv2.imshow('Sliding windows', out_img)
+    ym_per_pix = 30 / 720
+    xm_per_pix = 3.7 / 640
+
+    left_fit_m = np.polyfit(lefty * ym_per_pix, leftx * xm_per_pix, 2)
+    right_fit_m = np.polyfit(righty * ym_per_pix, rightx * xm_per_pix, 2)
+
+    y_eval = (h - 1) * ym_per_pix
+    left_curverad = ((1 + (2 * left_fit_m[0] * y_eval + left_fit_m[1])**2)**1.5) / abs(2 * left_fit_m[0])
+    right_curverad = ((1 + (2 * right_fit_m[0] * y_eval + right_fit_m[1])**2)**1.5) / abs(2 * right_fit_m[0])
+    nl, nr = len(leftx), len(rightx)
+    curvature = (nl * left_curverad + nr * right_curverad) / (nl + nr)
+    
+
+    lane_center = (left_fitx[-1] + right_fitx[-1]) / 2
+    offset = (lane_center - w / 2) * xm_per_pix
+
+    print(f"Left radius:  {left_curverad:.0f} m")
+    print(f"Right radius: {right_curverad:.0f} m")
+    print(f"Curvature:    {curvature:.0f} m")
+    print(f"Offset:       {offset:.2f} m")
+
+    lane_warp = np.zeros((h, w, 3), dtype=np.uint8)
+    pts_left = np.int32(np.column_stack((left_fitx, ploty)))
+    pts_right = np.int32(np.column_stack((right_fitx, ploty)))[::-1]
+    cv2.fillPoly(lane_warp, [np.vstack((pts_left, pts_right))], (0, 255, 0))
+
+
+    lane_unwarp = cv2.warpPerspective(lane_warp, Minv, (w, h))
+    result = cv2.addWeighted(undist, 1.0, lane_unwarp, 0.3, 0)
+
+    side = "levo" if offset > 0 else "desno"
+    cv2.putText(result, f"Radijus krivine: {curvature:.0f} m", (40, 60), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (255, 255, 255), 2)
+    cv2.putText(result, f"Vozilo je {abs(offset):.2f} m {side} od centra", (40, 110), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (255, 255, 255), 2)
+
+    cv2.imwrite('docs/example_output2.png', result)
+    cv2.imshow('Rezultat', result)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
