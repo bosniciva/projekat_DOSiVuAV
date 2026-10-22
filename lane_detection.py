@@ -60,8 +60,66 @@ if __name__ == "__main__":
 
     binary_warped = cv2.warpPerspective(threshold_binary(undist), M, (w, h))
 
-    cv2.imwrite('docs/warped_straight_lines2.png', np.hstack([marked, warped]))
-    cv2.imwrite('docs/binary_warped2.png', binary_warped)
-    cv2.imshow('Trapezoid | Bird-eye', np.hstack([marked, warped]))
+    binary = binary_warped // 255
+    h, w = binary.shape
+
+    histogram = np.sum(binary[h // 2:, :], axis=0)
+    midpoint = w // 2
+    leftx_current = np.argmax(histogram[:midpoint])
+    rightx_current = np.argmax(histogram[midpoint:]) + midpoint
+
+    nwindows = 9
+    margin = 100
+    minpix = 50
+    window_height = h // nwindows
+
+    nonzeroy, nonzerox = binary.nonzero()
+    left_inds, right_inds = [], []
+    out_img = np.dstack((binary, binary, binary)) * 255
+
+    for window in range(nwindows):
+        y_low = h - (window + 1) * window_height
+        y_high = h - window * window_height
+
+        xl_low, xl_high = leftx_current - margin, leftx_current + margin
+        xr_low, xr_high = rightx_current - margin, rightx_current + margin
+
+        cv2.rectangle(out_img, (xl_low, y_low), (xl_high, y_high), (0, 255, 0), 2)
+        cv2.rectangle(out_img, (xr_low, y_low), (xr_high, y_high), (0, 255, 0), 2)
+
+        good_left = ((nonzeroy >= y_low) & (nonzeroy < y_high) &
+                    (nonzerox >= xl_low) & (nonzerox < xl_high)).nonzero()[0]
+        good_right = ((nonzeroy >= y_low) & (nonzeroy < y_high) &
+                    (nonzerox >= xr_low) & (nonzerox < xr_high)).nonzero()[0]
+
+        left_inds.append(good_left)
+        right_inds.append(good_right)
+
+        if len(good_left) > minpix:
+            leftx_current = int(np.mean(nonzerox[good_left]))
+        if len(good_right) > minpix:
+            rightx_current = int(np.mean(nonzerox[good_right]))
+
+    left_inds = np.concatenate(left_inds)
+    right_inds = np.concatenate(right_inds)
+
+    leftx, lefty = nonzerox[left_inds], nonzeroy[left_inds]
+    rightx, righty = nonzerox[right_inds], nonzeroy[right_inds]
+
+    left_fit = np.polyfit(lefty, leftx, 2)
+    right_fit = np.polyfit(righty, rightx, 2)
+
+    ploty = np.linspace(0, h - 1, h)
+    left_fitx = left_fit[0] * ploty**2 + left_fit[1] * ploty + left_fit[2]
+    right_fitx = right_fit[0] * ploty**2 + right_fit[1] * ploty + right_fit[2]
+
+    out_img[lefty, leftx] = [0, 0, 255]
+    out_img[righty, rightx] = [255, 0, 0]
+    for fitx in (left_fitx, right_fitx):
+        pts = np.int32(np.column_stack((fitx, ploty)))
+        cv2.polylines(out_img, [pts], False, (0, 255, 255), 3)
+
+    cv2.imwrite('docs/sliding_windows.png', out_img)
+    cv2.imshow('Sliding windows', out_img)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
