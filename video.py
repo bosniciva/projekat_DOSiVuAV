@@ -9,10 +9,8 @@ w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
 h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 out = cv2.VideoWriter('output_challenge03.mp4', cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h))
 
-# Kalibracija vazi samo za kameru sa 1280x720 snimcima
 use_undistort = (w == 1280 and h == 720)
 
-# Trapez kao udeo dimenzija slike: gore-levo, gore-desno, dole-desno, dole-levo
 if use_undistort:
     src = np.float32([[0.467*w, 0.639*h], [0.552*w, 0.639*h], [0.816*w, 0.958*h], [0.224*w, 0.958*h]])
 else:
@@ -21,7 +19,7 @@ dst = np.float32([[0.25*w, 0], [0.75*w, 0], [0.75*w, h], [0.25*w, h]])
 M = cv2.getPerspectiveTransform(src, dst)
 Minv = cv2.getPerspectiveTransform(dst, src)
 
-lane_px = 0.5 * w            # sirina trake u ptičjoj perspektivi (px)
+lane_px = 0.5 * w
 ym_per_pix = 30 / h
 xm_per_pix = 3.7 / lane_px
 ploty = np.linspace(0, h - 1, h)
@@ -79,7 +77,6 @@ while True:
         xl = fit_l[0] * ploty**2 + fit_l[1] * ploty + fit_l[2]
         xr = fit_r[0] * ploty**2 + fit_r[1] * ploty + fit_r[2]
 
-        # Razmak izmedju linija mora biti blizu 0.5*w (+/- 20%), gore i dole
         width_bottom = xr[-1] - xl[-1]
         width_top = xr[0] - xl[0]
         if 0.8 * lane_px < width_bottom < 1.2 * lane_px and 0.8 * lane_px < width_top < 1.2 * lane_px:
@@ -105,7 +102,6 @@ while True:
     lane_center = (left_fitx[-1] + right_fitx[-1]) / 2
     offset = (lane_center - w / 2) * xm_per_pix
 
-    # Crvene linije: crtamo krive u ptičjoj perspektivi i vracamo ih inverznom matricom
     lines_warp = np.zeros((h, w, 3), dtype=np.uint8)
     for fitx in (left_fitx, right_fitx):
         pts = np.int32(np.column_stack((fitx, ploty)))
