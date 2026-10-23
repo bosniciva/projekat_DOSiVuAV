@@ -4,12 +4,10 @@ import numpy as np
 data = np.load('calib.npz')
 mtx, dist = data['mtx'], data['dist']
 
-
 def undistort(img):
     h, w = img.shape[:2]
     newCameraMtx, roi = cv2.getOptimalNewCameraMatrix(mtx, dist, (w, h), 0, (w, h))
     return cv2.undistort(img, mtx, dist, None, newCameraMtx)
-
 
 def threshold_binary(img, s_thresh=170, sx_thresh=120, l_thresh=200):
     hls = cv2.cvtColor(img, cv2.COLOR_BGR2HLS)
@@ -25,7 +23,6 @@ def threshold_binary(img, s_thresh=170, sx_thresh=120, l_thresh=200):
     _, l_binary = cv2.threshold(l_channel, l_thresh, 255, cv2.THRESH_BINARY)
 
     return cv2.bitwise_or(sx_binary, cv2.bitwise_or(s_binary, l_binary))
-
 
 if __name__ == "__main__":
     img = cv2.imread('test_images/test2.jpg')
@@ -114,7 +111,6 @@ if __name__ == "__main__":
     nl, nr = len(leftx), len(rightx)
     curvature = (nl * left_curverad + nr * right_curverad) / (nl + nr)
     
-
     lane_center = (left_fitx[-1] + right_fitx[-1]) / 2
     offset = (lane_center - w / 2) * xm_per_pix
 
@@ -127,7 +123,6 @@ if __name__ == "__main__":
     pts_left = np.int32(np.column_stack((left_fitx, ploty)))
     pts_right = np.int32(np.column_stack((right_fitx, ploty)))[::-1]
     cv2.fillPoly(lane_warp, [np.vstack((pts_left, pts_right))], (0, 255, 0))
-
 
     lane_unwarp = cv2.warpPerspective(lane_warp, Minv, (w, h))
     result = cv2.addWeighted(undist, 1.0, lane_unwarp, 0.3, 0)
