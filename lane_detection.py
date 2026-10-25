@@ -19,7 +19,7 @@ def threshold_binary(img, l_thresh=200, s_min=130, l_min=40):
     return cv2.bitwise_or(yellow, white)
 
 if __name__ == "__main__":
-    img = cv2.imread('test_images/test3.jpg')
+    img = cv2.imread('test_images/test1.jpg')
     undist = undistort(img)
     h, w = undist.shape[:2]
 
@@ -121,7 +121,7 @@ if __name__ == "__main__":
     lane_unwarp = cv2.warpPerspective(lane_warp, Minv, (w, h))
     result = cv2.addWeighted(undist, 1.0, lane_unwarp, 0.3, 0)
 
-    cv2.imwrite('docs/example_output3.png', result)
+    cv2.imwrite('docs/example_output1.png', result)
     cv2.imshow('Rezultat', result)
     cv2.waitKey(0)
     cv2.destroyAllWindows()

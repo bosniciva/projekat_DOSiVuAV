@@ -20,7 +20,9 @@ The goals / steps of this project are the following:
 [image5]: ./docs/warped_straight_lines2.png "Warp"
 [image6]: ./docs/color_fit_test1.png "Fit Visual 1"
 [image7]: ./docs/color_fit_test2.png "Fit Visual 2"
-[image6]: ./examples/example_output.jpg "Output"
+[image8]: ./docs/example_output1.png "Output 1"
+[image9]: ./docs/example_output2.png "Output 2"
+[image10]: ./docs/example_output3.png "Output 3"
 [video1]: ./project_video.mp4 "Video"
 
 ---
@@ -109,7 +111,38 @@ Additional protections in the video (video.py), because the same problems occur 
 
 #### 5. Describe how (and identify where in your code) you calculated the radius of curvature of the lane and the position of the vehicle with respect to center.
 
-TODO: Add your text here!!!
+Fitting is done in meters. Assumptions are:
+xm_per_pix = 3.7 / 640: the width of the lane is 3.7 m (US standard), and in the bird's eye view it is 640 px,
+ym_per_pix = 30 / 720: about 30 m road is visible in the view from above.
+
+The radius of curvature for x = A·y² + B·y + C is:
+R = (1 + (2·A·y + B)²)^1.5 / |2·A|
+
+The second derivative tells how much the curve bends, the smaller A, the flatter the curve, and larger the R. The expression (2Ay + B) is the tilt of the line and corrects for the line being tilted. I calculate it at the point closest to the vehicle. For the final number, I take the average of the left and right lines.
+
+Vehicle position is calculated with the middle of the bar at the bottom of the image, it's the average of the x-coordinates of the left and right curves. The difference from the center of the image, multiplied by xm_per_pix, gives the offset.
+
+The results:
+
+![Output 1][image8]
+Left radius:  1059 m
+Right radius: 1453 m
+Curvature:    1103 m
+Offset:       0.16 m
+
+
+![Output 2][image9]
+Left radius:  676 m
+Right radius: 2014 m
+Curvature:    850 m
+Offset:       0.39 m
+
+![Output 3][image10]
+Left radius:  1600 m
+Right radius: 798 m
+Curvature:    1399 m
+Offset:       0.12 m
+
 
 #### 6. Provide an example image of your result plotted back down onto the road such that the lane area is identified clearly.
 
