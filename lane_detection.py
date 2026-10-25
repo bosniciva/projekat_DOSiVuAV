@@ -9,23 +9,17 @@ def undistort(img):
     newCameraMtx, roi = cv2.getOptimalNewCameraMatrix(mtx, dist, (w, h), 0, (w, h))
     return cv2.undistort(img, mtx, dist, None, newCameraMtx)
 
-def threshold_binary(img, s_thresh=170, sx_thresh=120, l_thresh=200):
+def threshold_binary(img, l_thresh=200, s_min=130, l_min=40):
     hls = cv2.cvtColor(img, cv2.COLOR_BGR2HLS)
     l_channel = hls[:, :, 1]
-    s_channel = hls[:, :, 2]
 
-    blur = cv2.GaussianBlur(l_channel, (5, 5), 0)
-    sobelX = cv2.Sobel(blur, ddepth=cv2.CV_32F, dx=1, dy=0, ksize=3)
-    absX = cv2.convertScaleAbs(sobelX)
-    _, sx_binary = cv2.threshold(absX, sx_thresh, 255, cv2.THRESH_BINARY)
+    yellow = cv2.inRange(hls, (15, l_min, s_min), (35, 255, 255))
+    _, white = cv2.threshold(l_channel, l_thresh, 255, cv2.THRESH_BINARY)
 
-    _, s_binary = cv2.threshold(s_channel, s_thresh, 255, cv2.THRESH_BINARY)
-    _, l_binary = cv2.threshold(l_channel, l_thresh, 255, cv2.THRESH_BINARY)
-
-    return cv2.bitwise_or(sx_binary, cv2.bitwise_or(s_binary, l_binary))
+    return cv2.bitwise_or(yellow, white)
 
 if __name__ == "__main__":
-    img = cv2.imread('test_images/test2.jpg')
+    img = cv2.imread('test_images/test3.jpg')
     undist = undistort(img)
     h, w = undist.shape[:2]
 
@@ -127,11 +121,7 @@ if __name__ == "__main__":
     lane_unwarp = cv2.warpPerspective(lane_warp, Minv, (w, h))
     result = cv2.addWeighted(undist, 1.0, lane_unwarp, 0.3, 0)
 
-    side = "levo" if offset > 0 else "desno"
-    cv2.putText(result, f"Radijus krivine: {curvature:.0f} m", (40, 60), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (255, 255, 255), 2)
-    cv2.putText(result, f"Vozilo je {abs(offset):.2f} m {side} od centra", (40, 110), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (255, 255, 255), 2)
-
-    cv2.imwrite('docs/example_output2.png', result)
+    cv2.imwrite('docs/example_output3.png', result)
     cv2.imshow('Rezultat', result)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
