@@ -125,23 +125,23 @@ Vehicle position is calculated with the middle of the bar at the bottom of the i
 The results:
 
 ![Output 1][image8]
-Left radius:  1059 m
-Right radius: 1453 m
-Curvature:    1103 m
-Offset:       0.16 m
+Left radius:  1059m
+Right radius: 1453m
+Curvature:    1103m
+Offset:       0.16m
 
 
 ![Output 2][image9]
-Left radius:  676 m
-Right radius: 2014 m
-Curvature:    850 m
-Offset:       0.39 m
+Left radius:  676m
+Right radius: 2014m
+Curvature:    850m
+Offset:       0.39m
 
 ![Output 3][image10]
-Left radius:  1600 m
-Right radius: 798 m
-Curvature:    1399 m
-Offset:       0.12 m
+Left radius:  1600m
+Right radius: 798m
+Curvature:    1399m
+Offset:       0.12m
 
 
 #### 6. Provide an example image of your result plotted back down onto the road such that the lane area is identified clearly.
