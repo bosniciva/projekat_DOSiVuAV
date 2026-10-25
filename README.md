@@ -18,8 +18,8 @@ The goals / steps of this project are the following:
 [image3]: ./docs/binary_combo.png "Binary Combo"
 [image4]: ./docs/warped_straight_lines.png "Warp"
 [image5]: ./docs/warped_straight_lines2.png "Warp"
-
-[image5]: ./examples/color_fit_lines.jpg "Fit Visual"
+[image6]: ./docs/color_fit_test1.png "Fit Visual 1"
+[image7]: ./docs/color_fit_test2.png "Fit Visual 2"
 [image6]: ./examples/example_output.jpg "Output"
 [video1]: ./project_video.mp4 "Video"
 
@@ -54,9 +54,12 @@ I check the quality of the calibration with the reprojection error, using cv2.pr
 #### 1. Provide an example of a distortion-corrected image.
 
 First, distortion correction was done on checkerboard picture:
+
 ![Undistorted Output][image1]
 
+
 The undistort() function in lane_detection.py uses getOptimalNewCameraMatrix with parameter alpha=0, then cv2.undistort. With alpha=1, all pixels remain, but black zones appear at the edges of the image. Those zones in the next step create false edges, so I set alpha=0 because it cuts to the correct part of the image, which is then slightly enlarged:
+
 ![Road Transformed][image2]
 
 
@@ -83,13 +86,26 @@ Perspective transformation is in lane_detection.py (images) and video.py (video)
 I determined the source points on the images of the straight road (straight_lines1.jpg, straight_lines2.jpg) so that the trapezoid lies on the inner edges of the lines. I verified that the lines in the top view are vertical and parallel in both images, which means that the transformation is not only applied to one image. The first attempt with the wrong numbers gave tilted lines, so I measured the points on the corrected image.
 
 I also calculate the inverse matrix (Minv), so it can be returned to the original image.
+
 ![Wrap][image4]
 
 ![Wrap][image5]
 
 #### 4. Describe how (and identify where in your code) you identified lane-line pixels and fit their positions with a polynomial?
 
-TODO: Add your text here!!!
+The code is in lane_detection.py (images) and video.py (video). I use histogram and sliding windows:
+1. Histogram: I sum the white pixels by column in the bottom half of the binary image. The two vertices are the initial positions of the left and right lines. I use the bottom half because that's where the line is most visible.
+2. Sliding windows: from each initial position I stack 9 windows upwards, width ±100 px. In each window I collect white pixels. If there are more than minpix, I center the next window on their average x, so the windows follow the line even when it curves. If there are not enough, the window stays in place. In the space between dashes, the window waits, then continues the line on the next dash.
+3. Polynomial: np.polyfit(y, x, 2) gives x = A·y² + B·y + C for each line. I fit x as a function of y because the lines are nearly vertical, so y(x) would have a nearly vertical tilt and be unstable.
+
+Additional protections in the video (video.py), because the same problems occur frame by frame:
+1. The fit is accepted only if both lines have more than 100 pixels and those pixels cover at least half the height of the image,
+2. The spacing between the bottom, middle and top lines must be around 640px and almost constant (change below 15%),
+3. Smoothing: weighted average of the last 5 accepted fits,
+4. If nothing is accepted for 10 frames in a row, the history is cleared and "Lane not found" is displayed, instead of drawing the outdated bar.
+
+![Fit Visual 1][image6]
+![Fit Visual 2][image7]
 
 #### 5. Describe how (and identify where in your code) you calculated the radius of curvature of the lane and the position of the vehicle with respect to center.
 
