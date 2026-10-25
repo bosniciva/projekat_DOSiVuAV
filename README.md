@@ -123,21 +123,20 @@ The second derivative tells how much the curve bends, the smaller A, the flatter
 Vehicle position is calculated with the middle of the bar at the bottom of the image, it's the average of the x-coordinates of the left and right curves. The difference from the center of the image, multiplied by xm_per_pix, gives the offset.
 
 The results:
-
-![Output 1][image8]
+Image 1:
 Left radius:  1059m
 Right radius: 1453m
 Curvature:    1103m
 Offset:       0.16m
 
 
-![Output 2][image9]
+Image 2:
 Left radius:  676m
 Right radius: 2014m
 Curvature:    850m
 Offset:       0.39m
 
-![Output 3][image10]
+Image 3:
 Left radius:  1600m
 Right radius: 798m
 Curvature:    1399m
@@ -146,7 +145,14 @@ Offset:       0.12m
 
 #### 6. Provide an example image of your result plotted back down onto the road such that the lane area is identified clearly.
 
-TODO: Add your text here!!!
+I draw the bar in the top view (simple: the area between two curves, cv2.fillPoly), then with the inverse matrix Minv (cv2.warpPerspective) I return it to the camera perspective and transparently place it over the corrected image (cv2.addWeighted).
+
+![Output 1][image8]
+
+![Output 2][image9]
+
+![Output 3][image10]
+
 
 ### Pipeline (video)
 
