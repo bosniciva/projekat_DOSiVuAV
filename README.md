@@ -15,9 +15,9 @@ The goals / steps of this project are the following:
 
 [image1]: ./docs/undistort_output.png "Undistorted"
 [image2]: ./docs/undistort_road.png "Road Transformed"
-[image3]: ./docs/binary_combo.jpg "Binary Combo"
-[image4]: ./docs/warped_straight_lines.jpg "Warp"
-[image5]: ./docs/warped_straight_lines2.jpg "Warp"
+[image3]: ./docs/binary_combo.png "Binary Combo"
+[image4]: ./docs/warped_straight_lines.png "Warp"
+[image5]: ./docs/warped_straight_lines2.png "Warp"
 
 [image5]: ./examples/color_fit_lines.jpg "Fit Visual"
 [image6]: ./examples/example_output.jpg "Output"
