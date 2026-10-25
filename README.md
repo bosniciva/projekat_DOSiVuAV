@@ -23,7 +23,9 @@ The goals / steps of this project are the following:
 [image8]: ./docs/example_output1.png "Output 1"
 [image9]: ./docs/example_output2.png "Output 2"
 [image10]: ./docs/example_output3.png "Output 3"
-[video1]: ./project_video.mp4 "Video"
+[video1]: ./output_video01.mp4 "Video 1"
+[video2]: ./output_video02.mp4 "Video 2"
+[video3]: ./output_video03.mp4 "Video 3"
 
 ---
 
@@ -158,11 +160,39 @@ I draw the bar in the top view (simple: the area between two curves, cv2.fillPol
 
 #### 1. Provide a link to your final video output.  Your pipeline should perform reasonably well on the entire project video (wobbly lines are ok but no catastrophic failures that would cause the car to drive off the road!).
 
-TODO: Add your text here!!!
+Video in video.py processes each frame with the same steps (undistort, threshold, perspective, windowing, fit, checks, smoothing, drawing). The lines are shown as red, transparent lines over the lines.
+
+Video 1:
+![Video 1][video1]
+
+Video 2:
+![Video 2][video2]
+
+Video 3:
+![Video 3][video3]
+
 
 ### Discussion
 
 #### 1. Briefly discuss any problems / issues you faced in your implementation of this project.  Where will your pipeline likely fail?  What could you do to make it more robust?
 
-TODO: Add your text here!!!
+Some of the problems:
+1. Perspective: the keystone numbers for the standard frame didn't work after alpha=0, so the lines were skewed. Solution: measure on a corrected image and check on two straight road images.
+2. Sobel was making noise, and the color is more stable.
+3. Saturation is unstable for dark pixels: in the shadow, all the asphalt entered the mask. The solution: the lower limit of brightness, and yellow by hue, not just by saturation.
+4. Pale yellow line in the distance: the fixed threshold was only capturing the near part, so the curve deviated. Solution: Yellow in hue with a lower saturation threshold. Price: on light concrete, the same threshold floods the mask, so the thresholds are parameters per image type.
+5. Smoothing delay: the average of the last 10 fits is delayed by about 4.5 frames, when the line moves laterally to about 2.3px per frame, that's about a 10px shift. Solution: 5 fits with linear weights.
+6. Mask collapse at the concrete - shadow transition. Solution: check that the pixels cover at least half the height.
 
+Where the pipeline goes wrong:
+1. Challenging footage (forest road with sharp curves, double yellow lines, strong shadows etc.): most frames are rejected by the pipeline. Threshold L > 200 marks sunny asphalt as a "white line", so the mask becomes flooded. In sharp curves, the lines in the top view have an S-shape that the quadratic polynomial cannot represent, the trapeze for a straight road does not apply there. Pipeline then prints "Lane not found", which is more correct than drawing an wrong line.
+2. Weak or faded mark, snow, rain, night, very strong shadow with trees.
+3. A vehicle in front obscuring the lane, or changing lanes.
+4. The result depends on the assumptions: lane width 3.7 m, 30 m of visible road, camera in the middle of the vehicle.
+
+What would improve robustness:
+1. Thresholds that adapt to illumination (local contrast) instead of fixed values. I've tried a top-hat on the white line and it makes the crooked white line stand out better on a challenging shot, but that alone isn't enough.
+2. Search around the previous fit instead of the histogram in each frame.
+3. A trapezoid that adjusts (or bends the road model) for sharp curves, and a shorter viewing range in the curve.
+4. If only one line is visible, estimate the others from the known width of the tape.
+5. A Kalman filter or similar model instead of a simple weighted average.
